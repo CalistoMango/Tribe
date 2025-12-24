@@ -46,13 +46,12 @@ export default function App() {
     }
   }, [isSDKLoaded, setInitialTab]);
 
-  // Auto-login when context has user
+  // Mark connected task as done when user is logged in
   useEffect(() => {
-    if (context?.user) {
-      setIsLoggedIn(true);
+    if (isLoggedIn && context?.user) {
       setTasksCompleted(prev => ({ ...prev, connected: true }));
     }
-  }, [context?.user]);
+  }, [isLoggedIn, context?.user]);
 
   // --- Handlers ---
   const handleLogin = () => {
