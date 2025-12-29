@@ -41,8 +41,7 @@ export interface MockReferral {
 export interface TasksCompleted {
   connected: boolean;
   followed: boolean;
-  recasted: boolean;
-  profile: boolean;
+  likedRecasted: boolean;
 }
 
 export interface Transaction {

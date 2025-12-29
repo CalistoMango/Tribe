@@ -6,13 +6,14 @@ import { type TasksCompleted } from "~/lib/mockData";
 
 interface TaskBannerProps {
   tasksCompleted: TasksCompleted;
-  onCompleteTask: (task: keyof TasksCompleted) => void;
-  onOpenProfileSetup: () => void;
+  onVerifyTask: (task: 'followed' | 'likedRecasted') => void;
 }
 
-export function TaskBanner({ tasksCompleted, onCompleteTask, onOpenProfileSetup }: TaskBannerProps) {
-  const completedCount = Object.values(tasksCompleted).filter(v => v).length;
-  const allTasksDone = completedCount === 4;
+export function TaskBanner({ tasksCompleted, onVerifyTask }: TaskBannerProps) {
+  // Only count the 3 earning tasks (connected, followed, likedRecasted)
+  const earningTasks = [tasksCompleted.connected, tasksCompleted.followed, tasksCompleted.likedRecasted];
+  const completedCount = earningTasks.filter(v => v).length;
+  const allTasksDone = completedCount === 3;
 
   if (allTasksDone) {
     return null;
@@ -26,7 +27,7 @@ export function TaskBanner({ tasksCompleted, onCompleteTask, onOpenProfileSetup 
             <Lock className="w-4 h-4 text-violet-400" />
             <span className="font-medium">Complete tasks to unlock earning</span>
           </div>
-          <span className="text-sm text-violet-300">{completedCount}/4</span>
+          <span className="text-sm text-violet-300">{completedCount}/3</span>
         </div>
         <div className="space-y-2">
           <TaskItem
@@ -36,20 +37,14 @@ export function TaskBanner({ tasksCompleted, onCompleteTask, onOpenProfileSetup 
           <TaskItem
             done={tasksCompleted.followed}
             label="Follow @tribe"
-            onClick={() => onCompleteTask('followed')}
+            onClick={() => onVerifyTask('followed')}
             actionLabel="Follow"
           />
           <TaskItem
-            done={tasksCompleted.recasted}
-            label="Recast our launch post"
-            onClick={() => onCompleteTask('recasted')}
-            actionLabel="Recast"
-          />
-          <TaskItem
-            done={tasksCompleted.profile}
-            label="Complete your profile"
-            onClick={onOpenProfileSetup}
-            actionLabel="Setup"
+            done={tasksCompleted.likedRecasted}
+            label="Like and recast our launch post"
+            onClick={() => onVerifyTask('likedRecasted')}
+            actionLabel="Engage"
           />
         </div>
       </div>

@@ -2,28 +2,52 @@
 
 import { X } from "lucide-react";
 import { useState } from "react";
-import { categories } from "~/lib/mockData";
+import { useCategories } from "~/hooks/useCategories";
 
 interface ProfileSetupModalProps {
+  fid: number;
   onClose: () => void;
   onSave: (bio: string, selectedCategories: string[]) => void;
 }
 
-export function ProfileSetupModal({ onClose, onSave }: ProfileSetupModalProps) {
+export function ProfileSetupModal({ fid, onClose, onSave }: ProfileSetupModalProps) {
+  const { categories, isLoading: categoriesLoading } = useCategories();
   const [userBio, setUserBio] = useState("");
   const [userCategories, setUserCategories] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleCategory = (catId: string) => {
     setUserCategories(prev =>
       prev.includes(catId)
         ? prev.filter(c => c !== catId)
-        : [...prev, catId]
+        : prev.length < 5 ? [...prev, catId] : prev
     );
   };
 
-  const handleSave = () => {
-    if (userBio && userCategories.length > 0) {
-      onSave(userBio, userCategories);
+  const handleSave = async () => {
+    if (!userBio || userCategories.length === 0 || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/users/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fid,
+          bio: userBio,
+          categories: userCategories,
+        }),
+      });
+
+      if (response.ok) {
+        onSave(userBio, userCategories);
+      } else {
+        console.error('Failed to save profile:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -51,30 +75,38 @@ export function ProfileSetupModal({ onClose, onSave }: ProfileSetupModalProps) {
         {/* Categories */}
         <div className="mb-6">
           <label className="block text-sm text-zinc-400 mb-2">Select your categories (pick 1-5)</label>
-          <div className="flex flex-wrap gap-2">
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => toggleCategory(cat.id)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  userCategories.includes(cat.id)
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                }`}
-              >
-                {cat.emoji} {cat.name}
-              </button>
-            ))}
-          </div>
+          {categoriesLoading ? (
+            <div className="flex flex-wrap gap-2">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-10 w-24 bg-zinc-800 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => toggleCategory(cat.id)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    userCategories.includes(cat.id)
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
+                >
+                  {cat.emoji} {cat.display_name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Save button */}
         <button
           onClick={handleSave}
-          disabled={!userBio || userCategories.length === 0}
+          disabled={!userBio || userCategories.length === 0 || isSaving}
           className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-3 rounded-xl transition-colors"
         >
-          Save Profile
+          {isSaving ? 'Saving...' : 'Save Profile'}
         </button>
       </div>
     </div>

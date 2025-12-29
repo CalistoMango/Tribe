@@ -82,6 +82,19 @@ export const APP_ACCOUNT_ASSOCIATION: AccountAssociation | undefined =
  */
 export const APP_BUTTON_TEXT: string = 'Find your tribe';
 
+// --- Tribe Configuration ---
+/**
+ * The FID of the @tribe account that users must follow.
+ * TODO: Replace with actual @tribe FID once account is created.
+ */
+export const TRIBE_FID: number = 0; // TODO: Set actual FID
+
+/**
+ * The hash of the launch post that users must recast.
+ * TODO: Replace with actual cast hash once launch post is created.
+ */
+export const LAUNCH_POST_HASH: string = ''; // TODO: Set actual hash
+
 // --- Integration Configuration ---
 /**
  * Webhook URL for receiving events from Neynar.

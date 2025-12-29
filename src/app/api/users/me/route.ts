@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { fid, bio, categories } = body
+    const { fid, bio, categories, discoverable } = body
 
     if (!fid) {
       return NextResponse.json({ error: 'Missing fid' }, { status: 400 })
@@ -53,6 +53,16 @@ export async function PUT(request: NextRequest) {
 
     if (categories !== undefined) {
       updateData.categories = categories
+    }
+
+    // Set profile_setup_complete if both bio and categories are provided
+    if (bio && categories && categories.length > 0) {
+      updateData.profile_setup_complete = true
+    }
+
+    // Set discoverable flag if provided
+    if (discoverable !== undefined) {
+      updateData.discoverable = discoverable
     }
 
     const { data: user, error } = await supabase

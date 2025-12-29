@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { categories, mockUsers } from "~/lib/mockData";
+import { mockUsers } from "~/lib/mockData";
 import { UserCard } from "~/components/ui/UserCard";
+import { useCategories } from "~/hooks/useCategories";
 
 export function DiscoverTab() {
+  const { categories, isLoading: categoriesLoading } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -35,29 +37,38 @@ export function DiscoverTab() {
       {/* Categories */}
       <div className="mb-6">
         <h3 className="text-sm text-zinc-400 mb-3 font-medium">Browse by category</h3>
-        <div className="flex flex-wrap gap-2">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === cat.id
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-              }`}
-            >
-              {cat.emoji} {cat.name}
-              <span className="ml-1 text-zinc-500 text-xs">{cat.count}</span>
-            </button>
-          ))}
-        </div>
+        {categoriesLoading ? (
+          <div className="flex flex-wrap gap-2">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-10 w-24 bg-zinc-800 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedCategory === cat.id
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                }`}
+              >
+                {cat.emoji} {cat.display_name}
+                {/* TODO: Replace with real user count per category (Phase 2) */}
+                <span className="ml-1 text-zinc-500 text-xs">0</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* User List */}
       <div>
         <h3 className="text-sm text-zinc-400 mb-3 font-medium">
           {selectedCategory
-            ? `${categories.find(c => c.id === selectedCategory)?.name}s`
+            ? `${categories.find(c => c.id === selectedCategory)?.display_name}s`
             : 'Featured users'}
         </h3>
         <div className="space-y-3">

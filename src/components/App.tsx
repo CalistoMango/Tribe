@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useMiniApp } from "@neynar/react";
 import { Header } from "~/components/ui/Header";
 import { Footer } from "~/components/ui/Footer";
 import { DiscoverTab, BountiesTab, EarningsTab, ReferralTab } from "~/components/ui/tabs";
-import { TaskBanner } from "~/components/ui/TaskBanner";
-import { ProfileSetupModal } from "~/components/ui/ProfileSetupModal";
+// TODO: Re-enable when task verification is fully wired (Phase 4)
+// import { TaskBanner } from "~/components/ui/TaskBanner";
+// TODO: Re-enable when bounties are implemented (Phase 4)
+// import { ProfileSetupModal } from "~/components/ui/ProfileSetupModal";
 import { LoginScreen } from "~/components/ui/LoginScreen";
 import { type TasksCompleted } from "~/lib/mockData";
 import { Tab } from "~/lib/types";
+import type { DbUser } from "~/lib/types";
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -31,15 +34,18 @@ export default function App() {
     }
     return false;
   });
+  const [dbUser, setDbUser] = useState<DbUser | null>(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
   const [tasksCompleted, setTasksCompleted] = useState<TasksCompleted>({
     connected: false,
     followed: false,
-    recasted: false,
-    profile: false,
+    likedRecasted: false,
   });
-  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  // TODO: Re-enable when bounties are implemented (Phase 4)
+  // const [showProfileSetup, setShowProfileSetup] = useState(false);
 
-  const allTasksDone = Object.values(tasksCompleted).every(v => v);
+  // All 3 earning tasks must be done
+  const allTasksDone = tasksCompleted.connected && tasksCompleted.followed && tasksCompleted.likedRecasted;
 
   // --- Effects ---
   useEffect(() => {
@@ -55,8 +61,46 @@ export default function App() {
     }
   }, [isLoggedIn, context?.user]);
 
+  // Bootstrap user in database when logged in
+  const bootstrapUser = useCallback(async () => {
+    if (!context?.user || isBootstrapping || dbUser) return;
+
+    setIsBootstrapping(true);
+    try {
+      const response = await fetch('/api/auth/bootstrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fid: context.user.fid,
+          username: context.user.username,
+          displayName: context.user.displayName,
+          pfpUrl: context.user.pfpUrl,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDbUser(data.user);
+        console.log('User bootstrapped:', data.isNew ? 'new user' : 'existing user');
+      } else {
+        console.error('Bootstrap failed:', await response.text());
+      }
+    } catch (error) {
+      console.error('Bootstrap error:', error);
+    } finally {
+      setIsBootstrapping(false);
+    }
+  }, [context?.user, isBootstrapping, dbUser]);
+
+  // Bootstrap user after login
+  useEffect(() => {
+    if (isLoggedIn && context?.user && !dbUser && !isBootstrapping) {
+      bootstrapUser();
+    }
+  }, [isLoggedIn, context?.user, dbUser, isBootstrapping, bootstrapUser]);
+
   // --- Handlers ---
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // Only allow login if we have Farcaster context (inside Warpcast)
     if (!context?.user) {
       return;
@@ -64,16 +108,46 @@ export default function App() {
     setIsLoggedIn(true);
     localStorage.setItem('tribe_signed_in', 'true');
     setTasksCompleted(prev => ({ ...prev, connected: true }));
+    // Bootstrap will be triggered by the useEffect above
   };
 
-  const handleCompleteTask = (task: keyof TasksCompleted) => {
-    setTasksCompleted(prev => ({ ...prev, [task]: true }));
-  };
+  // TODO: Re-enable when task verification is fully wired (Phase 4)
+  // const handleVerifyTask = async (task: 'followed' | 'likedRecasted') => {
+  //   const fid = context?.user?.fid ?? dbUser?.fid;
+  //   if (!fid) return;
 
-  const handleSaveProfile = () => {
-    setTasksCompleted(prev => ({ ...prev, profile: true }));
-    setShowProfileSetup(false);
-  };
+  //   try {
+  //     const response = await fetch('/api/tasks/verify', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         fid,
+  //         task: task === 'followed' ? 'follow' : 'like_recast',
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.verified) {
+  //         setTasksCompleted(prev => ({ ...prev, [task]: true }));
+  //       } else {
+  //         // TODO: Show user-friendly message that task is not yet complete
+  //         console.log('Task not verified:', data.message);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Task verification error:', error);
+  //   }
+  // };
+
+  // TODO: Re-enable when bounties are implemented (Phase 4)
+  // const handleSaveProfile = (bio: string, categories: string[]) => {
+  //   // Update local dbUser state with new profile data
+  //   if (dbUser) {
+  //     setDbUser({ ...dbUser, bio, categories, profile_setup_complete: true });
+  //   }
+  //   setShowProfileSetup(false);
+  // };
 
   // --- Early Returns ---
   if (!isSDKLoaded) {
@@ -94,15 +168,17 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
+  // TODO: Re-enable when bounties are implemented (Phase 4)
   // Show profile setup modal
-  if (showProfileSetup) {
-    return (
-      <ProfileSetupModal
-        onClose={() => setShowProfileSetup(false)}
-        onSave={handleSaveProfile}
-      />
-    );
-  }
+  // if (showProfileSetup && (context?.user?.fid || dbUser?.fid)) {
+  //   return (
+  //     <ProfileSetupModal
+  //       fid={context?.user?.fid ?? dbUser?.fid ?? 0}
+  //       onClose={() => setShowProfileSetup(false)}
+  //       onSave={handleSaveProfile}
+  //     />
+  //   );
+  // }
 
   // --- Render ---
   return (
@@ -117,12 +193,11 @@ export default function App() {
     >
       <Header />
 
-      {/* Task Banner */}
-      <TaskBanner
+      {/* TODO: Re-enable when task verification is fully wired (Phase 4) */}
+      {/* <TaskBanner
         tasksCompleted={tasksCompleted}
-        onCompleteTask={handleCompleteTask}
-        onOpenProfileSetup={() => setShowProfileSetup(true)}
-      />
+        onVerifyTask={handleVerifyTask}
+      /> */}
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto pb-20">
