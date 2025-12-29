@@ -205,7 +205,7 @@ export default function App() {
           {currentTab === Tab.Discover && <DiscoverTab />}
           {currentTab === Tab.Bounties && <BountiesTab allTasksDone={allTasksDone} />}
           {currentTab === Tab.Earnings && <EarningsTab />}
-          {currentTab === Tab.Referral && <ReferralTab />}
+          {currentTab === Tab.Referral && <ReferralTab userFid={context?.user?.fid ?? dbUser?.fid ?? null} />}
         </div>
       </main>
 

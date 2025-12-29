@@ -2,23 +2,17 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { mockUsers } from "~/lib/mockData";
 import { UserCard } from "~/components/ui/UserCard";
 import { useCategories } from "~/hooks/useCategories";
+import { useDiscoverUsers, useCategoryCounts } from "~/hooks/useDiscoverUsers";
 
 export function DiscoverTab() {
   const { categories, isLoading: categoriesLoading } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredUsers = mockUsers.filter(user => {
-    const matchesCategory = !selectedCategory || user.categories.includes(selectedCategory);
-    const matchesSearch = !searchQuery ||
-      user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.bio.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const { users, isLoading: usersLoading } = useDiscoverUsers(selectedCategory, searchQuery);
+  const { counts } = useCategoryCounts(categories.map(c => c.id));
 
   return (
     <div>
@@ -56,8 +50,7 @@ export function DiscoverTab() {
                 }`}
               >
                 {cat.emoji} {cat.display_name}
-                {/* TODO: Replace with real user count per category (Phase 2) */}
-                <span className="ml-1 text-zinc-500 text-xs">0</span>
+                <span className="ml-1 text-zinc-500 text-xs">{counts[cat.id] ?? 0}</span>
               </button>
             ))}
           </div>
@@ -72,9 +65,30 @@ export function DiscoverTab() {
             : 'Featured users'}
         </h3>
         <div className="space-y-3">
-          {filteredUsers.map(user => (
-            <UserCard key={user.fid} user={user} />
-          ))}
+          {usersLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="bg-zinc-900 rounded-xl p-4 flex gap-3">
+                <div className="w-12 h-12 rounded-full bg-zinc-800 animate-pulse flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="h-4 w-32 bg-zinc-800 rounded animate-pulse mb-2" />
+                  <div className="h-3 w-24 bg-zinc-800 rounded animate-pulse mb-2" />
+                  <div className="h-3 w-full bg-zinc-800 rounded animate-pulse" />
+                </div>
+              </div>
+            ))
+          ) : users.length === 0 ? (
+            <div className="bg-zinc-900 rounded-xl p-8 text-center text-zinc-500">
+              {searchQuery
+                ? 'No users found matching your search'
+                : selectedCategory
+                  ? 'No users in this category yet'
+                  : 'No discoverable users yet'}
+            </div>
+          ) : (
+            users.map(user => (
+              <UserCard key={user.fid} user={user} />
+            ))
+          )}
         </div>
       </div>
     </div>
