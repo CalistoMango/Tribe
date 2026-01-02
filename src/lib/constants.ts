@@ -95,6 +95,49 @@ export const TRIBE_FID: number = 0; // TODO: Set actual FID
  */
 export const LAUNCH_POST_HASH: string = ''; // TODO: Set actual hash
 
+// --- Smart Contract Configuration ---
+/**
+ * TribeVault proxy contract address.
+ * Set via NEXT_PUBLIC_TRIBE_VAULT_ADDRESS env var.
+ */
+export const TRIBE_VAULT_ADDRESS: `0x${string}` =
+  (process.env.NEXT_PUBLIC_TRIBE_VAULT_ADDRESS as `0x${string}`) || '0x0000000000000000000000000000000000000000';
+
+/**
+ * USDC token contract address.
+ * Set via NEXT_PUBLIC_USDC_ADDRESS env var.
+ * Defaults: Base Sepolia = 0x036CbD53842c5426634e7929541eC2318f3dCF7e
+ *           Base Mainnet = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+ */
+export const USDC_CONTRACT_ADDRESS: `0x${string}` =
+  (process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}`) || '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+
+/**
+ * Minimum deposit amount in USDC micro-units (6 decimals).
+ * 1 USDC = 1,000,000 micro-units
+ */
+export const MIN_DEPOSIT_USDC: number = 1_000_000; // 1 USDC
+
+/**
+ * Base chain ID.
+ * Set via NEXT_PUBLIC_CHAIN_ID env var.
+ * Defaults to Base Sepolia (84532). Base Mainnet is 8453.
+ */
+export const BASE_CHAIN_ID: number = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532', 10);
+
+// --- Webhook Configuration ---
+/**
+ * Alchemy webhook signing key for verifying deposit events.
+ * Server-side only - do not expose to client.
+ */
+export const ALCHEMY_WEBHOOK_SIGNING_KEY: string = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY || '';
+
+/**
+ * Private key for signing claim messages.
+ * Server-side only - NEVER expose to client.
+ */
+export const CLAIM_SIGNER_PRIVATE_KEY: string = process.env.CLAIM_SIGNER_PRIVATE_KEY || '';
+
 // --- Integration Configuration ---
 /**
  * Webhook URL for receiving events from Neynar.
